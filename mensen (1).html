@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mensen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F5F1;
+    --card:#FFFFFF;
+    --text:#242A26;
+    --text-muted:#767970;
+    --border:#E4E2DA;
+    --accent:#2F4F44;
+    --accent-light:#E4ECE8;
+    --warn:#B5762A;
+    --warn-light:#F5E9DA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 90px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:8px 0 16px;
+  }
+  .searchbar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;
+  }
+  .searchbar input{
+    border:none;outline:none;background:transparent;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);width:100%;
+  }
+  .searchbar input::placeholder{color:var(--text-muted);}
+  .searchbar svg{flex-shrink:0;color:var(--text-muted);}
+  .tagrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+  .tagchip{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+    background:var(--card);color:var(--text-muted);white-space:nowrap;cursor:pointer;
+    flex-shrink:0;
+  }
+  .tagchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:10px;cursor:pointer;
+    border-left:3px solid var(--border);
+    transition:border-color .15s;
+  }
+  .card.open{border-left:3px solid var(--warn);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .card-naam{font-family:'Fraunces',serif;font-weight:500;font-size:17px;margin:0;}
+  .card-verband{font-size:13px;color:var(--text-muted);margin:3px 0 0;}
+  .card-tags{display:flex;gap:6px;margin-top:8px;}
+  .card-tags span{
+    font-size:11px;color:var(--accent);background:var(--accent-light);
+    padding:2px 8px;border-radius:10px;
+  }
+  .card-meta{font-size:12px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:5px;}
+  .empty{text-align:center;color:var(--text-muted);padding:60px 20px;font-size:14px;}
+  .empty .big{font-family:'Fraunces',serif;font-size:19px;color:var(--text);margin-bottom:6px;}
+  .fab{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    max-width:448px;width:calc(100% - 32px);
+    background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
+    padding:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:15px;
+    display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+    box-shadow:0 4px 16px rgba(47,79,68,0.25);
+  }
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,20,15,0.4);
+    align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--card);border-radius:20px 20px 0 0;padding:22px 20px 28px;
+    width:100%;max-width:480px;
+  }
+  .sheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--text-muted);margin-bottom:5px;}
+  .field input{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);outline:none;
+  }
+  .field input:focus{border-color:var(--accent);}
+  .sheet-btns{display:flex;gap:10px;margin-top:18px;}
+  .sheet-btns button{
+    flex:1;padding:12px;border-radius:10px;font-family:'Inter',sans-serif;
+    font-weight:600;font-size:14px;cursor:pointer;
+  }
+  .btn-cancel{background:var(--bg);border:1px solid var(--border);color:var(--text);}
+  .btn-save{background:var(--accent);border:none;color:#fff;}
+  .sync{font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:6px;}
+  .sync.err{color:var(--warn);}
+  #screenDetail{display:none;}
+  #screenDetail.show{display:block;}
+  .detail-header{display:flex;align-items:center;gap:12px;margin:8px 0 20px;}
+  .detail-back{cursor:pointer;color:var(--text-muted);flex-shrink:0;display:flex;}
+  .detail-actions{display:flex;gap:14px;flex-shrink:0;}
+  .detail-avatar{
+    width:42px;height:42px;border-radius:50%;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:15px;flex-shrink:0;
+  }
+  .detail-naam{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0;}
+  .detail-verband{font-size:13px;color:var(--text-muted);margin:2px 0 0;}
+  .section-label{
+    font-size:12px;color:var(--text-muted);font-weight:600;
+    text-transform:uppercase;letter-spacing:.03em;margin:22px 0 8px;
+  }
+  .ap-item{
+    background:var(--warn-light);border-radius:10px;padding:10px 12px;
+    margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;
+  }
+  .ap-item input[type=checkbox]{margin-top:2px;flex-shrink:0;}
+  .ap-tekst{font-size:14px;color:#6B4419;margin:0;}
+  .ap-datum{font-size:11px;color:var(--text-muted);margin:3px 0 0;}
+  .tl-item{border-left:2px solid var(--border);padding-left:12px;margin-bottom:14px;}
+  .tl-datum{font-size:12px;color:var(--text-muted);margin:0;}
+  .tl-tekst{font-size:14px;margin:3px 0 0;}
+  .leeg-sectie{font-size:13px;color:var(--text-muted);}
+  .sheet textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);outline:none;resize:none;
+  }
+  .sheet textarea:focus{border-color:var(--accent);}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:14px;margin:16px 0;}
+  .tagpick{display:flex;flex-wrap:wrap;gap:8px;}
+  .tagpick-chip{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+    background:var(--card);color:var(--text-muted);cursor:pointer;
+  }
+  .tagpick-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .recent-item{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;margin-bottom:8px;cursor:pointer;
+  }
+  .recent-naam{font-size:13px;font-weight:600;color:var(--accent);margin:0 0 2px;}
+  .recent-tekst{font-size:13px;margin:0;color:var(--text);}
+  .recent-datum{font-size:11px;color:var(--text-muted);margin:4px 0 0;}
+  .info-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 14px;}
+  .info-row{
+    display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+    border-bottom:1px solid var(--border);font-size:13px;
+  }
+  .info-row:last-child{border-bottom:none;}
+  .info-label{color:var(--text-muted);flex-shrink:0;}
+  .info-value{color:var(--text);text-align:right;}
+</style>
+</head>
+<body>
+<div class="wrap" id="screenLijst">
+  <h1>Mensen</h1>
+  <div class="sync" id="syncStatus">Verbinden...</div>
+
+  <div class="searchbar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="zoekInput" placeholder="Zoek op naam..." oninput="renderLijst()">
+  </div>
+
+  <div class="section-label" style="margin-top:0;">Recent</div>
+  <div id="recentLijst"></div>
+
+  <div class="tagrow" id="tagRow"></div>
+
+  <div id="lijst"></div>
+</div>
+
+<button class="fab" id="fabNieuw" onclick="openNieuwPersoon()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nieuw persoon
+</button>
+
+<button class="fab" id="fabAantekening" style="display:none;" onclick="openAantekening()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Aantekening toevoegen
+</button>
+
+<div class="wrap" id="screenDetail">
+  <div class="detail-header">
+    <div class="detail-back" onclick="sluitDetail()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </div>
+    <div class="detail-avatar" id="detailAvatar"></div>
+    <div style="flex:1;">
+      <p class="detail-naam" id="detailNaam"></p>
+      <p class="detail-verband" id="detailVerband"></p>
+    </div>
+    <div class="detail-actions">
+      <div class="detail-back" onclick="openBewerkPersoon()" aria-label="Bewerken">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </div>
+      <div class="detail-back" onclick="verwijderPersoon()" aria-label="Verwijderen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="detailInfoSection">
+    <div class="section-label" style="margin-top:0;">Over</div>
+    <div class="info-card" id="detailInfo"></div>
+  </div>
+
+  <div class="section-label">Aandachtspunten</div>
+  <div id="detailAandachtspunten"></div>
+
+  <div class="section-label">Tijdlijn</div>
+  <div id="detailTijdlijn"></div>
+</div>
+
+<div class="overlay" id="overlayAantekening" onclick="if(event.target===this) sluitAantekening()">
+  <div class="sheet">
+    <h2>Nieuwe aantekening</h2>
+    <div class="field">
+      <textarea id="atTekst" rows="3" placeholder="Wat is er besproken of gebeurd?"></textarea>
+    </div>
+    <label class="checkline">
+      <input type="checkbox" id="atIsAandachtspunt">
+      Dit is een aandachtspunt om later op terug te komen
+    </label>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitAantekening()">Annuleren</button>
+      <button class="btn-save" onclick="opslaanAantekening()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayNieuw" onclick="if(event.target===this) sluitNieuwPersoon()">
+  <div class="sheet">
+    <h2 id="npTitel">Nieuw persoon</h2>
+    <div class="field">
+      <label>Naam</label>
+      <input type="text" id="npNaam" placeholder="Voornaam Achternaam">
+    </div>
+    <div class="field">
+      <label>Hoe ken je diegene</label>
+      <input type="text" id="npVerband" placeholder="Buurvrouw, oud-collega...">
+    </div>
+    <div class="field">
+      <label>Werk / studie</label>
+      <input type="text" id="npWerkStudie" placeholder="Docent op basisschool De Vlinder">
+    </div>
+    <div class="field">
+      <label>Hobby's / sport</label>
+      <input type="text" id="npHobbies" placeholder="Hardlopen, tuinieren">
+    </div>
+    <div class="field">
+      <label>Gezin / kinderen</label>
+      <input type="text" id="npGezin" placeholder="Getrouwd, 2 kinderen (8 en 11)">
+    </div>
+    <div class="field">
+      <label>Verjaardag</label>
+      <input type="text" id="npVerjaardag" placeholder="14 maart">
+    </div>
+    <div class="field">
+      <label>Woonplaats</label>
+      <input type="text" id="npWoonplaats" placeholder="Rhenen">
+    </div>
+    <div class="field">
+      <label>Tags</label>
+      <div class="tagpick" id="npTagPick"></div>
+    </div>
+    <div class="field">
+      <label>Overige tags (optioneel, komma-gescheiden)</label>
+      <input type="text" id="npTagsExtra" placeholder="hockeyclub, oud-studie">
+    </div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitNieuwPersoon()">Annuleren</button>
+      <button class="btn-save" id="npOpslaanBtn" onclick="opslaanNieuwPersoon()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ==== Firebase config ====
+// LET OP Pim: vul hier dezelfde config in als in voetbaltrainingen.html
+// (zelfde project: app-voor-voetbaltrainingen)
+const firebaseConfig = {
+  apiKey: "VUL_HIER_IN",
+  authDomain: "app-voor-voetbaltrainingen.firebaseapp.com",
+  projectId: "app-voor-voetbaltrainingen",
+  storageBucket: "app-voor-voetbaltrainingen.appspot.com",
+  messagingSenderId: "VUL_HIER_IN",
+  appId: "VUL_HIER_IN"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==== State ====
+let mensen = [];
+let actieveTag = null;
+
+// ==== Data laden (getDocs polling, geen onSnapshot ivm Chromebook) ====
+function laadMensen() {
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
+  Promise.race([db.collection('mensen').get(), timeout])
+    .then(snap => {
+      mensen = [];
+      snap.forEach(doc => mensen.push({ id: doc.id, ...doc.data() }));
+      setSync(true);
+      renderTags();
+      renderRecent();
+      renderLijst();
+    })
+    .catch(err => {
+      console.error(err);
+      setSync(false);
+    });
+}
+function setSync(ok) {
+  const el = document.getElementById('syncStatus');
+  if (ok) {
+    el.textContent = 'Verbonden - ' + mensen.length + ' personen';
+    el.className = 'sync';
+  } else {
+    el.textContent = 'Verbinding mislukt - opnieuw proberen...';
+    el.className = 'sync err';
+  }
+}
+
+// ==== Helpers ====
+function dagenSinds(datumStr) {
+  if (!datumStr) return null;
+  const d = new Date(datumStr + 'T12:00:00');
+  const nu = new Date();
+  return Math.floor((nu - d) / (1000 * 60 * 60 * 24));
+}
+function laatstGesprokenTekst(datumStr) {
+  const dagen = dagenSinds(datumStr);
+  if (dagen === null) return 'nog niet gesproken';
+  if (dagen === 0) return 'vandaag gesproken';
+  if (dagen === 1) return 'gisteren gesproken';
+  if (dagen < 14) return dagen + ' dagen geleden gesproken';
+  return Math.floor(dagen / 7) + ' weken geleden gesproken';
+}
+function heeftOpenAandachtspunt(persoon) {
+  return (persoon.aandachtspunten || []).some(a => a.status === 'open');
+}
+function vandaagStr() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + mm + '-' + dd;
+}
+const MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+function formatDatumKort(datumStr) {
+  if (!datumStr) return '';
+  const d = new Date(datumStr + 'T12:00:00');
+  return d.getDate() + ' ' + MAANDEN[d.getMonth()];
+}
+function initialen(naam) {
+  return naam.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+// ==== Tags ====
+const DEFAULT_TAGS = ['Familie', 'Vrienden', 'Werk', 'Sport', 'Buren', 'Overig'];
+function alleTags() {
+  const custom = new Set();
+  mensen.forEach(p => (p.tags || []).forEach(t => {
+    if (!DEFAULT_TAGS.includes(t)) custom.add(t);
+  }));
+  return DEFAULT_TAGS.concat(Array.from(custom).sort());
+}
+
+// ==== Render tags ====
+function renderTags() {
+  const row = document.getElementById('tagRow');
+  const tags = alleTags();
+  let html = '<div class="tagchip' + (actieveTag === null ? ' active' : '') + '" onclick="filterTag(null)">Alle tags</div>';
+  tags.forEach(t => {
+    html += '<div class="tagchip' + (actieveTag === t ? ' active' : '') + '" onclick="filterTag(\'' + t + '\')">' + t + '</div>';
+  });
+  row.innerHTML = html;
+}
+function filterTag(tag) {
+  actieveTag = tag;
+  renderTags();
+  renderLijst();
+}
+
+// ==== Render lijst ====
+function recenteAantekeningen(n) {
+  const alles = [];
+  mensen.forEach(p => {
+    (p.tijdlijn || []).forEach(t => {
+      alles.push({ personId: p.id, naam: p.naam, datum: t.datum, tekst: t.tekst });
+    });
+  });
+  alles.sort((a, b) => (b.datum || '').localeCompare(a.datum || ''));
+  return alles.slice(0, n);
+}
+function renderRecent() {
+  const wrap = document.getElementById('recentLijst');
+  const recent = recenteAantekeningen(5);
+  if (recent.length === 0) {
+    wrap.innerHTML = '<div class="leeg-sectie">Nog geen aantekeningen</div>';
+    return;
+  }
+  let html = '';
+  recent.forEach(r => {
+    html += '<div class="recent-item" onclick="openPersoon(\'' + r.personId + '\')">';
+    html += '<p class="recent-naam">' + r.naam + '</p>';
+    html += '<p class="recent-tekst">' + r.tekst + '</p>';
+    html += '<p class="recent-datum">' + formatDatumKort(r.datum) + '</p>';
+    html += '</div>';
+  });
+  wrap.innerHTML = html;
+}
+
+function renderLijst() {
+  const zoek = document.getElementById('zoekInput').value.toLowerCase().trim();
+  let gefilterd = mensen.filter(p => {
+    const matchZoek = !zoek || p.naam.toLowerCase().includes(zoek);
+    const matchTag = !actieveTag || (p.tags || []).includes(actieveTag);
+    return matchZoek && matchTag;
+  });
+  // sorteer: langst niet gesproken bovenaan, nooit gesproken helemaal bovenaan
+  gefilterd.sort((a, b) => {
+    const da = dagenSinds(a.laatstGesproken);
+    const db_ = dagenSinds(b.laatstGesproken);
+    if (da === null && db_ === null) return a.naam.localeCompare(b.naam);
+    if (da === null) return -1;
+    if (db_ === null) return 1;
+    return db_ - da;
+  });
+
+  const lijst = document.getElementById('lijst');
+  if (gefilterd.length === 0) {
+    lijst.innerHTML = '<div class="empty"><div class="big">Nog niemand hier</div>Voeg de eerste persoon toe met de knop hieronder.</div>';
+    return;
+  }
+  let html = '';
+  gefilterd.forEach(p => {
+    const open = heeftOpenAandachtspunt(p);
+    html += '<div class="card' + (open ? ' open' : '') + '" onclick="openPersoon(\'' + p.id + '\')">';
+    html += '<div class="card-top"><div>';
+    html += '<p class="card-naam">' + p.naam + '</p>';
+    html += '<p class="card-verband">' + (p.verband || '') + '</p>';
+    html += '</div></div>';
+    if (p.tags && p.tags.length) {
+      html += '<div class="card-tags">' + p.tags.map(t => '<span>' + t + '</span>').join('') + '</div>';
+    }
+    html += '<div class="card-meta">' + laatstGesprokenTekst(p.laatstGesproken) + '</div>';
+    html += '</div>';
+  });
+  lijst.innerHTML = html;
+}
+
+// ==== Nieuw persoon / bewerken ====
+let npSelectedTags = [];
+let bewerkModusId = null;
+function renderNpTagPick() {
+  const wrap = document.getElementById('npTagPick');
+  let html = '';
+  DEFAULT_TAGS.forEach(t => {
+    const selected = npSelectedTags.includes(t);
+    html += '<div class="tagpick-chip' + (selected ? ' selected' : '') + '" onclick="toggleNpTag(\'' + t + '\')">' + t + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+function toggleNpTag(tag) {
+  const i = npSelectedTags.indexOf(tag);
+  if (i === -1) npSelectedTags.push(tag);
+  else npSelectedTags.splice(i, 1);
+  renderNpTagPick();
+}
+function openNieuwPersoon() {
+  bewerkModusId = null;
+  document.getElementById('npTitel').textContent = 'Nieuw persoon';
+  document.getElementById('npOpslaanBtn').textContent = 'Opslaan';
+  npSelectedTags = [];
+  renderNpTagPick();
+  document.getElementById('overlayNieuw').classList.add('show');
+}
+function openBewerkPersoon() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  bewerkModusId = p.id;
+  document.getElementById('npTitel').textContent = 'Persoon bewerken';
+  document.getElementById('npOpslaanBtn').textContent = 'Wijzigen';
+  document.getElementById('npNaam').value = p.naam || '';
+  document.getElementById('npVerband').value = p.verband || '';
+  document.getElementById('npWerkStudie').value = p.werkStudie || '';
+  document.getElementById('npHobbies').value = p.hobbies || '';
+  document.getElementById('npGezin').value = p.gezin || '';
+  document.getElementById('npVerjaardag').value = p.verjaardag || '';
+  document.getElementById('npWoonplaats').value = p.woonplaats || '';
+  npSelectedTags = (p.tags || []).filter(t => DEFAULT_TAGS.includes(t));
+  document.getElementById('npTagsExtra').value = (p.tags || []).filter(t => !DEFAULT_TAGS.includes(t)).join(', ');
+  renderNpTagPick();
+  document.getElementById('overlayNieuw').classList.add('show');
+}
+function sluitNieuwPersoon() {
+  document.getElementById('overlayNieuw').classList.remove('show');
+  document.getElementById('npNaam').value = '';
+  document.getElementById('npVerband').value = '';
+  document.getElementById('npWerkStudie').value = '';
+  document.getElementById('npHobbies').value = '';
+  document.getElementById('npGezin').value = '';
+  document.getElementById('npVerjaardag').value = '';
+  document.getElementById('npWoonplaats').value = '';
+  document.getElementById('npTagsExtra').value = '';
+  npSelectedTags = [];
+  bewerkModusId = null;
+}
+function opslaanNieuwPersoon() {
+  const naam = document.getElementById('npNaam').value.trim();
+  if (!naam) {
+    alert('Vul een naam in');
+    return;
+  }
+  const verband = document.getElementById('npVerband').value.trim();
+  const werkStudie = document.getElementById('npWerkStudie').value.trim();
+  const hobbies = document.getElementById('npHobbies').value.trim();
+  const gezin = document.getElementById('npGezin').value.trim();
+  const verjaardag = document.getElementById('npVerjaardag').value.trim();
+  const woonplaats = document.getElementById('npWoonplaats').value.trim();
+  const extraRaw = document.getElementById('npTagsExtra').value.trim();
+  const extraTags = extraRaw ? extraRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = npSelectedTags.concat(extraTags.filter(t => !npSelectedTags.includes(t)));
+
+  const velden = {
+    naam: naam,
+    verband: verband,
+    werkStudie: werkStudie,
+    hobbies: hobbies,
+    gezin: gezin,
+    verjaardag: verjaardag,
+    woonplaats: woonplaats,
+    tags: tags
+  };
+
+  if (bewerkModusId) {
+    db.collection('mensen').doc(bewerkModusId).update(velden)
+      .then(() => {
+        const p = mensen.find(x => x.id === bewerkModusId);
+        if (p) Object.assign(p, velden);
+        sluitNieuwPersoon();
+        renderDetail();
+        renderTags();
+        renderRecent();
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Wijzigen mislukt, probeer opnieuw');
+      });
+    return;
+  }
+
+  const nieuwePersoon = Object.assign({}, velden, {
+    laatstGesproken: null,
+    aandachtspunten: [],
+    tijdlijn: []
+  });
+
+  db.collection('mensen').add(nieuwePersoon)
+    .then(() => {
+      sluitNieuwPersoon();
+      laadMensen();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan mislukt, probeer opnieuw');
+    });
+}
+
+// ==== Detailscherm ====
+let huidigPersoonId = null;
+
+function openPersoon(id) {
+  huidigPersoonId = id;
+  document.getElementById('screenLijst').style.display = 'none';
+  document.getElementById('screenDetail').classList.add('show');
+  document.getElementById('fabNieuw').style.display = 'none';
+  document.getElementById('fabAantekening').style.display = 'flex';
+  renderDetail();
+}
+function sluitDetail() {
+  huidigPersoonId = null;
+  document.getElementById('screenDetail').classList.remove('show');
+  document.getElementById('screenLijst').style.display = 'block';
+  document.getElementById('fabNieuw').style.display = 'flex';
+  document.getElementById('fabAantekening').style.display = 'none';
+  renderLijst();
+}
+function huidigePersoonData() {
+  return mensen.find(p => p.id === huidigPersoonId);
+}
+function renderDetail() {
+  const p = huidigePersoonData();
+  if (!p) { sluitDetail(); return; }
+
+  document.getElementById('detailAvatar').textContent = initialen(p.naam);
+  document.getElementById('detailNaam').textContent = p.naam;
+  document.getElementById('detailVerband').textContent = (p.verband || '') + (p.tags && p.tags.length ? ' - ' + p.tags.join(', ') : '');
+
+  const infoVelden = [
+    { label: 'Werk / studie', waarde: p.werkStudie },
+    { label: 'Hobby\'s / sport', waarde: p.hobbies },
+    { label: 'Gezin / kinderen', waarde: p.gezin },
+    { label: 'Verjaardag', waarde: p.verjaardag },
+    { label: 'Woonplaats', waarde: p.woonplaats }
+  ].filter(v => v.waarde);
+  const infoSection = document.getElementById('detailInfoSection');
+  if (infoVelden.length === 0) {
+    infoSection.style.display = 'none';
+  } else {
+    infoSection.style.display = 'block';
+    let infoHtml = '';
+    infoVelden.forEach(v => {
+      infoHtml += '<div class="info-row"><span class="info-label">' + v.label + '</span><span class="info-value">' + v.waarde + '</span></div>';
+    });
+    document.getElementById('detailInfo').innerHTML = infoHtml;
+  }
+
+  const apWrap = document.getElementById('detailAandachtspunten');
+  const openPunten = (p.aandachtspunten || []).filter(a => a.status === 'open');
+  if (openPunten.length === 0) {
+    apWrap.innerHTML = '<div class="leeg-sectie">Geen open aandachtspunten</div>';
+  } else {
+    let html = '';
+    (p.aandachtspunten || []).forEach((a, i) => {
+      if (a.status !== 'open') return;
+      html += '<div class="ap-item">';
+      html += '<input type="checkbox" onchange="toggleAandachtspunt(' + i + ')">';
+      html += '<div><p class="ap-tekst">' + a.tekst + '</p>';
+      html += '<p class="ap-datum">genoteerd ' + formatDatumKort(a.datum) + '</p></div>';
+      html += '</div>';
+    });
+    apWrap.innerHTML = html;
+  }
+
+  const tlWrap = document.getElementById('detailTijdlijn');
+  const tijdlijn = (p.tijdlijn || []).slice().reverse();
+  if (tijdlijn.length === 0) {
+    tlWrap.innerHTML = '<div class="leeg-sectie">Nog geen aantekeningen</div>';
+  } else {
+    let html = '';
+    tijdlijn.forEach(t => {
+      html += '<div class="tl-item">';
+      html += '<p class="tl-datum">' + formatDatumKort(t.datum) + '</p>';
+      html += '<p class="tl-tekst">' + t.tekst + '</p>';
+      html += '</div>';
+    });
+    tlWrap.innerHTML = html;
+  }
+}
+function toggleAandachtspunt(index) {
+  const p = huidigePersoonData();
+  if (!p || !p.aandachtspunten || !p.aandachtspunten[index]) return;
+  p.aandachtspunten[index].status = 'afgevinkt';
+  db.collection('mensen').doc(p.id).update({ aandachtspunten: p.aandachtspunten })
+    .then(() => renderDetail())
+    .catch(err => {
+      console.error(err);
+      alert('Bijwerken mislukt, probeer opnieuw');
+      p.aandachtspunten[index].status = 'open';
+    });
+}
+
+function verwijderPersoon() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  const bevestigd = confirm('Weet je zeker dat je ' + p.naam + ' wilt verwijderen? Dit kan niet ongedaan gemaakt worden.');
+  if (!bevestigd) return;
+  db.collection('mensen').doc(p.id).delete()
+    .then(() => {
+      sluitDetail();
+      laadMensen();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Verwijderen mislukt, probeer opnieuw');
+    });
+}
+function openAantekening() {
+  document.getElementById('overlayAantekening').classList.add('show');
+}
+function sluitAantekening() {
+  document.getElementById('overlayAantekening').classList.remove('show');
+  document.getElementById('atTekst').value = '';
+  document.getElementById('atIsAandachtspunt').checked = false;
+}
+function opslaanAantekening() {
+  const tekst = document.getElementById('atTekst').value.trim();
+  if (!tekst) {
+    alert('Vul een tekst in');
+    return;
+  }
+  const isAandachtspunt = document.getElementById('atIsAandachtspunt').checked;
+  const p = huidigePersoonData();
+  if (!p) return;
+
+  const vandaag = vandaagStr();
+  const tijdlijn = p.tijdlijn || [];
+  tijdlijn.push({ datum: vandaag, tekst: tekst });
+
+  const aandachtspunten = p.aandachtspunten || [];
+  if (isAandachtspunt) {
+    aandachtspunten.push({ tekst: tekst, datum: vandaag, status: 'open' });
+  }
+
+  db.collection('mensen').doc(p.id).update({
+    tijdlijn: tijdlijn,
+    aandachtspunten: aandachtspunten,
+    laatstGesproken: vandaag
+  })
+    .then(() => {
+      p.tijdlijn = tijdlijn;
+      p.aandachtspunten = aandachtspunten;
+      p.laatstGesproken = vandaag;
+      sluitAantekening();
+      renderDetail();
+      renderRecent();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan mislukt, probeer opnieuw');
+    });
+}
+
+// ==== Exports voor onclick ====
+window.openNieuwPersoon = openNieuwPersoon;
+window.sluitNieuwPersoon = sluitNieuwPersoon;
+window.opslaanNieuwPersoon = opslaanNieuwPersoon;
+window.openPersoon = openPersoon;
+window.openBewerkPersoon = openBewerkPersoon;
+window.verwijderPersoon = verwijderPersoon;
+window.sluitDetail = sluitDetail;
+window.toggleAandachtspunt = toggleAandachtspunt;
+window.openAantekening = openAantekening;
+window.sluitAantekening = sluitAantekening;
+window.opslaanAantekening = opslaanAantekening;
+window.toggleNpTag = toggleNpTag;
+window.filterTag = filterTag;
+window.renderLijst = renderLijst;
+
+// ==== Start ====
+laadMensen();
+setInterval(laadMensen, 30000);
+</script>
+</body>
+</html>
