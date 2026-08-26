@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyDjTY6XFpfGdBt-8Iz7M1qWT44rys7uWi4",
+  authDomain: "app-voor-voetbaltrainingen.firebaseapp.com",
+  projectId: "app-voor-voetbaltrainingen",
+  storageBucket: "app-voor-voetbaltrainingen.appspot.com",
+  messagingSenderId: "869029037781",
+  appId: "1:869029037781:web:84f134fcdc051f2567445c"
+};
