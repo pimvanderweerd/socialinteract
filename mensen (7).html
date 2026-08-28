@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mensen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F5F1;
+    --card:#FFFFFF;
+    --text:#242A26;
+    --text-muted:#767970;
+    --border:#E4E2DA;
+    --accent:#2F4F44;
+    --accent-light:#E4ECE8;
+    --warn:#B5762A;
+    --warn-light:#F5E9DA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 90px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:8px 0 16px;
+  }
+  .searchbar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;
+  }
+  .searchbar input{
+    border:none;outline:none;background:transparent;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);width:100%;
+  }
+  .searchbar input::placeholder{color:var(--text-muted);}
+  .searchbar svg{flex-shrink:0;color:var(--text-muted);}
+  .tagrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+  .tagchip{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+    background:var(--card);color:var(--text-muted);white-space:nowrap;cursor:pointer;
+    flex-shrink:0;
+  }
+  .tagchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:10px;cursor:pointer;
+    border-left:3px solid var(--border);
+    transition:border-color .15s;
+  }
+  .card.open{border-left:3px solid var(--warn);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .card-naam{font-family:'Fraunces',serif;font-weight:500;font-size:17px;margin:0;}
+  .card-verband{font-size:13px;color:var(--text-muted);margin:3px 0 0;}
+  .card-tags{display:flex;gap:6px;margin-top:8px;}
+  .card-tags span{
+    font-size:11px;color:var(--accent);background:var(--accent-light);
+    padding:2px 8px;border-radius:10px;
+  }
+  .card-meta{font-size:12px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:5px;}
+  .empty{text-align:center;color:var(--text-muted);padding:60px 20px;font-size:14px;}
+  .empty .big{font-family:'Fraunces',serif;font-size:19px;color:var(--text);margin-bottom:6px;}
+  .fab{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    max-width:448px;width:calc(100% - 32px);
+    background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
+    padding:14px;font-family:'Inter',sans-serif;font-weight:600;font-size:15px;
+    display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+    box-shadow:0 4px 16px rgba(47,79,68,0.25);
+  }
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,20,15,0.4);
+    align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--card);border-radius:20px 20px 0 0;padding:22px 20px 28px;
+    width:100%;max-width:480px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  .sheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--text-muted);margin-bottom:5px;}
+  .field input{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);outline:none;
+  }
+  .field input:focus{border-color:var(--accent);}
+  .sheet-btns{display:flex;gap:10px;margin-top:18px;}
+  .sheet-btns button{
+    flex:1;padding:12px;border-radius:10px;font-family:'Inter',sans-serif;
+    font-weight:600;font-size:14px;cursor:pointer;
+  }
+  .btn-cancel{background:var(--bg);border:1px solid var(--border);color:var(--text);}
+  .btn-save{background:var(--accent);border:none;color:#fff;}
+  .sync{font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:6px;}
+  .sync.err{color:var(--warn);}
+  #screenDetail{display:none;}
+  #screenDetail.show{display:block;}
+  #screenOnderwerp{display:none;}
+  #screenOnderwerp.show{display:block;}
+  #screenHerinneringen{display:none;}
+  #screenHerinneringen.show{display:block;}
+  .detail-header{display:flex;align-items:center;gap:12px;margin:8px 0 20px;}
+  .detail-back{cursor:pointer;color:var(--text-muted);flex-shrink:0;display:flex;}
+  .detail-actions{display:flex;gap:14px;flex-shrink:0;}
+  .detail-avatar{
+    width:42px;height:42px;border-radius:50%;background:var(--accent-light);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:15px;flex-shrink:0;
+  }
+  .detail-naam{font-family:'Fraunces',serif;font-weight:600;font-size:18px;margin:0;}
+  .detail-verband{font-size:13px;color:var(--text-muted);margin:2px 0 0;}
+  .section-label{
+    font-size:12px;color:var(--text-muted);font-weight:600;
+    text-transform:uppercase;letter-spacing:.03em;margin:22px 0 8px;
+  }
+  .ap-item{
+    background:var(--warn-light);border-radius:10px;padding:10px 12px;
+    margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+  }
+  .ap-item.inactief{background:var(--bg);}
+  .ap-item input[type=checkbox]{margin-top:2px;flex-shrink:0;}
+  .ap-tekst{font-size:14px;color:#6B4419;margin:0;}
+  .ap-item.inactief .ap-tekst{color:var(--text-muted);}
+  .ap-datum{font-size:11px;color:var(--text-muted);margin:3px 0 0;}
+  .leeg-sectie{font-size:13px;color:var(--text-muted);}
+  .card-ap-list{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+  .card-ap-item{
+    font-size:12px;color:#6B4419;background:var(--warn-light);
+    border-radius:6px;padding:4px 8px;
+  }
+  .update-item{border-left:2px solid var(--border);padding-left:12px;margin-bottom:14px;}
+  .update-datum{font-size:12px;color:var(--text-muted);margin:0;}
+  .update-tekst{font-size:14px;margin:3px 0 0;white-space:pre-wrap;}
+  .sheet textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);outline:none;resize:none;
+  }
+  .sheet textarea:focus{border-color:var(--accent);}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:14px;margin:16px 0;}
+  .tagpick{display:flex;flex-wrap:wrap;gap:8px;}
+  .tagpick-chip{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+    padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+    background:var(--card);color:var(--text-muted);cursor:pointer;
+  }
+  .tagpick-chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .info-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 14px;}
+  .info-row{
+    display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+    border-bottom:1px solid var(--border);font-size:13px;
+  }
+  .info-row:last-child{border-bottom:none;}
+  .info-label{color:var(--text-muted);flex-shrink:0;}
+  .info-value{color:var(--text);text-align:right;}
+  .relatie-item{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;margin-bottom:8px;cursor:pointer;
+  }
+  .relatie-tekst{font-size:14px;}
+  .relatie-type{color:var(--text-muted);}
+  .relatie-remove{color:var(--text-muted);cursor:pointer;padding:4px;flex-shrink:0;display:flex;}
+  .link-btn{
+    background:none;border:none;color:var(--accent);font-family:'Inter',sans-serif;
+    font-weight:600;font-size:13px;cursor:pointer;padding:6px 0 4px;
+    display:flex;align-items:center;gap:5px;
+  }
+  .field select{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:15px;color:var(--text);background:var(--card);outline:none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="screenLijst">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <h1>Mensen</h1>
+    <div class="detail-back" onclick="openHerinneringenOverzicht()" aria-label="Herinneringen" style="margin-bottom:8px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+  </div>
+  <div class="sync" id="syncStatus">Verbinden...</div>
+
+  <div class="searchbar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="zoekInput" placeholder="Zoek op naam..." oninput="renderLijst()">
+  </div>
+
+  <div class="tagrow" id="tagRow"></div>
+
+  <div id="lijst"></div>
+</div>
+
+<button class="fab" id="fabNieuw" onclick="openNieuwPersoon()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nieuw persoon
+</button>
+
+<button class="fab" id="fabOnderwerp" style="display:none;" onclick="openNieuwOnderwerp()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nieuw onderwerp
+</button>
+
+<button class="fab" id="fabUpdate" style="display:none;" onclick="openNieuweUpdate()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Update toevoegen
+</button>
+
+<div class="wrap" id="screenDetail">
+  <div class="detail-header">
+    <div class="detail-back" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </div>
+    <div class="detail-avatar" id="detailAvatar"></div>
+    <div style="flex:1;">
+      <p class="detail-naam" id="detailNaam"></p>
+      <p class="detail-verband" id="detailVerband"></p>
+    </div>
+    <div class="detail-actions">
+      <div class="detail-back" onclick="openBewerkPersoon()" aria-label="Bewerken">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </div>
+      <div class="detail-back" onclick="verwijderPersoon()" aria-label="Verwijderen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="detailInfoSection">
+    <div class="section-label" style="margin-top:0;">Over</div>
+    <div class="info-card" id="detailInfo"></div>
+  </div>
+
+  <div class="section-label">Relaties</div>
+  <div id="detailRelaties"></div>
+  <button class="link-btn" onclick="openRelatieSheet()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Relatie toevoegen
+  </button>
+
+  <div class="section-label">Onderwerpen</div>
+  <div id="detailOnderwerpen"></div>
+</div>
+
+<div class="wrap" id="screenOnderwerp">
+  <div class="detail-header">
+    <div class="detail-back" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </div>
+    <div style="flex:1;">
+      <p id="ondPersoonNaam" style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;margin:0 0 2px;" onclick="naarPersoonVanuitOnderwerp()"></p>
+      <p class="detail-naam" id="ondTitel"></p>
+      <p class="detail-verband" id="ondMeta"></p>
+    </div>
+    <div class="detail-actions">
+      <div class="detail-back" onclick="openBewerkOnderwerp()" aria-label="Bewerken">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </div>
+      <div class="detail-back" onclick="verwijderOnderwerp()" aria-label="Verwijderen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:0;">Updates</div>
+  <div id="ondUpdates"></div>
+</div>
+
+<div class="wrap" id="screenHerinneringen">
+  <div class="detail-header">
+    <div class="detail-back" onclick="history.back()" aria-label="Terug">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </div>
+    <div style="flex:1;">
+      <p class="detail-naam">Herinneringen</p>
+      <p class="detail-verband">Alles wat je met een belletje hebt gemarkeerd</p>
+    </div>
+  </div>
+  <div id="herinneringenLijst"></div>
+</div>
+
+<div class="overlay" id="overlayOnderwerp" onclick="if(event.target===this) sluitOnderwerpSheet()">
+  <div class="sheet">
+    <h2 id="ondSheetTitel">Nieuw onderwerp</h2>
+    <div class="field">
+      <label>Titel</label>
+      <input type="text" id="ondNaam" placeholder="Vader is ziek">
+    </div>
+    <div class="field" id="ondEersteUpdateVeld">
+      <label>Eerste update (optioneel)</label>
+      <textarea id="ondEersteUpdate" rows="3" placeholder="Wat is er besproken of gebeurd?"></textarea>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <div class="tagpick" id="atStatusPick"></div>
+    </div>
+    <label class="checkline">
+      <input type="checkbox" id="atHerinnering" onchange="toggleHerinneringDatumVeld()">
+      Hier wil ik aan herinnerd worden
+    </label>
+    <div class="field" id="atHerinneringDatumVeld" style="display:none;">
+      <label>Herinner me vanaf</label>
+      <input type="date" id="atHerinneringDatum">
+    </div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitOnderwerpSheet()">Annuleren</button>
+      <button class="btn-save" id="ondOpslaanBtn" onclick="opslaanOnderwerp()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayUpdate" onclick="if(event.target===this) sluitUpdateSheet()">
+  <div class="sheet">
+    <h2>Update toevoegen</h2>
+    <div class="field">
+      <textarea id="updTekst" rows="3" placeholder="Wat is er nieuw?"></textarea>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitUpdateSheet()">Annuleren</button>
+      <button class="btn-save" onclick="opslaanUpdate()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayRelatie" onclick="if(event.target===this) sluitRelatieSheet()">
+  <div class="sheet">
+    <h2>Relatie toevoegen</h2>
+    <div class="field">
+      <label>Type relatie</label>
+      <div class="tagpick" id="relTypePick"></div>
+    </div>
+    <div class="field">
+      <label>Persoon</label>
+      <select id="relPersoon"></select>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitRelatieSheet()">Annuleren</button>
+      <button class="btn-save" onclick="opslaanRelatie()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayNieuw" onclick="if(event.target===this) sluitNieuwPersoon()">
+  <div class="sheet">
+    <h2 id="npTitel">Nieuw persoon</h2>
+    <div class="field">
+      <label>Naam</label>
+      <input type="text" id="npNaam" placeholder="Voornaam Achternaam">
+    </div>
+    <div class="field">
+      <label>Hoe ken je diegene</label>
+      <input type="text" id="npVerband" placeholder="Buurvrouw, oud-collega...">
+    </div>
+    <div class="field">
+      <label>Werk / studie</label>
+      <input type="text" id="npWerkStudie" placeholder="Docent op basisschool De Vlinder">
+    </div>
+    <div class="field">
+      <label>Hobby's / sport</label>
+      <input type="text" id="npHobbies" placeholder="Hardlopen, tuinieren">
+    </div>
+    <div class="field">
+      <label>Gezin / kinderen</label>
+      <input type="text" id="npGezin" placeholder="Getrouwd, 2 kinderen (8 en 11)">
+    </div>
+    <div class="field">
+      <label>Verjaardag</label>
+      <input type="text" id="npVerjaardag" placeholder="14 maart">
+    </div>
+    <div class="field">
+      <label>Woonplaats</label>
+      <input type="text" id="npWoonplaats" placeholder="Rhenen">
+    </div>
+    <div class="field">
+      <label>Tags</label>
+      <div class="tagpick" id="npTagPick"></div>
+    </div>
+    <div class="field">
+      <label>Overige tags (optioneel, komma-gescheiden)</label>
+      <input type="text" id="npTagsExtra" placeholder="hockeyclub, oud-studie">
+    </div>
+    <div class="field" id="npRelatiesVeld">
+      <label>Relaties (optioneel)</label>
+      <div id="npRelatiesLijst"></div>
+      <div class="tagpick" id="npRelTypePick" style="margin-bottom:8px;"></div>
+      <select id="npRelPersoon" style="margin-bottom:8px;"></select>
+      <button type="button" class="link-btn" onclick="npVoegRelatieToe()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Toevoegen aan lijst
+      </button>
+    </div>
+    <div class="sheet-btns">
+      <button class="btn-cancel" onclick="sluitNieuwPersoon()">Annuleren</button>
+      <button class="btn-save" id="npOpslaanBtn" onclick="opslaanNieuwPersoon()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ==== Firebase config ====
+// LET OP Pim: vul hier dezelfde config in als in voetbaltrainingen.html
+// (zelfde project: app-voor-voetbaltrainingen)
+const firebaseConfig = {
+  apiKey: "VUL_HIER_IN",
+  authDomain: "app-voor-voetbaltrainingen.firebaseapp.com",
+  projectId: "app-voor-voetbaltrainingen",
+  storageBucket: "app-voor-voetbaltrainingen.appspot.com",
+  messagingSenderId: "VUL_HIER_IN",
+  appId: "VUL_HIER_IN"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==== State ====
+let mensen = [];
+let actieveTag = null;
+
+// ==== Data laden (getDocs polling, geen onSnapshot ivm Chromebook) ====
+function laadMensen() {
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
+  Promise.race([db.collection('mensen').get(), timeout])
+    .then(snap => {
+      mensen = [];
+      snap.forEach(doc => mensen.push({ id: doc.id, ...doc.data() }));
+      setSync(true);
+      renderTags();
+      renderLijst();
+    })
+    .catch(err => {
+      console.error(err);
+      setSync(false);
+    });
+}
+function setSync(ok) {
+  const el = document.getElementById('syncStatus');
+  if (ok) {
+    el.textContent = 'Verbonden - ' + mensen.length + ' personen';
+    el.className = 'sync';
+  } else {
+    el.textContent = 'Verbinding mislukt - opnieuw proberen...';
+    el.className = 'sync err';
+  }
+}
+
+// ==== Helpers ====
+function dagenSinds(datumStr) {
+  if (!datumStr) return null;
+  const d = new Date(datumStr + 'T12:00:00');
+  const nu = new Date();
+  const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const nuMidnight = new Date(nu.getFullYear(), nu.getMonth(), nu.getDate());
+  return Math.round((nuMidnight - dMidnight) / (1000 * 60 * 60 * 24));
+}
+function laatstGesprokenTekst(datumStr) {
+  const dagen = dagenSinds(datumStr);
+  if (dagen === null) return 'nog niet gesproken';
+  if (dagen === 0) return 'vandaag gesproken';
+  if (dagen === 1) return 'gisteren gesproken';
+  if (dagen < 14) return dagen + ' dagen geleden gesproken';
+  return Math.floor(dagen / 7) + ' weken geleden gesproken';
+}
+function genereerId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function kortTekst(t, n) {
+  if (!t) return '';
+  return t.length > n ? t.slice(0, n).trim() + '...' : t;
+}
+function vandaagStr() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + mm + '-' + dd;
+}
+const MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+function formatDatumKort(datumStr) {
+  if (!datumStr) return '';
+  const d = new Date(datumStr + 'T12:00:00');
+  return d.getDate() + ' ' + MAANDEN[d.getMonth()];
+}
+function initialen(naam) {
+  return naam.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+function escHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escJs(str) {
+  if (str === undefined || str === null) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+// ==== Tags ====
+const DEFAULT_TAGS = ['Familie', 'Vrienden', 'Werk', 'Sport', 'Buren', 'Overig'];
+
+// ==== Relaties ====
+const RELATIE_TYPES = ['Partner van', 'Kind van', 'Ouder van', 'Vriend(in) van'];
+const RELATIE_RECIPROOK = {
+  'Partner van': 'Partner van',
+  'Kind van': 'Ouder van',
+  'Ouder van': 'Kind van',
+  'Vriend(in) van': 'Vriend(in) van'
+};
+function alleTags() {
+  const custom = new Set();
+  mensen.forEach(p => (p.tags || []).forEach(t => {
+    if (!DEFAULT_TAGS.includes(t)) custom.add(t);
+  }));
+  return DEFAULT_TAGS.concat(Array.from(custom).sort());
+}
+
+// ==== Render tags ====
+function renderTags() {
+  const row = document.getElementById('tagRow');
+  const tags = alleTags();
+  let html = '<div class="tagchip' + (actieveTag === null ? ' active' : '') + '" onclick="filterTag(null)">Alle tags</div>';
+  tags.forEach(t => {
+    html += '<div class="tagchip' + (actieveTag === t ? ' active' : '') + '" onclick="filterTag(\'' + escJs(t) + '\')">' + escHtml(t) + '</div>';
+  });
+  row.innerHTML = html;
+}
+function filterTag(tag) {
+  actieveTag = tag;
+  renderTags();
+  renderLijst();
+}
+
+// ==== Render lijst ====
+function renderLijst() {
+  const zoek = document.getElementById('zoekInput').value.toLowerCase().trim();
+  let gefilterd = mensen.filter(p => {
+    const matchZoek = !zoek || p.naam.toLowerCase().includes(zoek);
+    const matchTag = !actieveTag || (p.tags || []).includes(actieveTag);
+    return matchZoek && matchTag;
+  });
+  // sorteer: langst niet gesproken bovenaan, nooit gesproken helemaal bovenaan
+  gefilterd.sort((a, b) => {
+    const da = dagenSinds(a.laatstGesproken);
+    const db_ = dagenSinds(b.laatstGesproken);
+    if (da === null && db_ === null) return a.naam.localeCompare(b.naam);
+    if (da === null) return -1;
+    if (db_ === null) return 1;
+    return db_ - da;
+  });
+
+  const lijst = document.getElementById('lijst');
+  if (gefilterd.length === 0) {
+    if (mensen.length === 0) {
+      lijst.innerHTML = '<div class="empty"><div class="big">Nog niemand hier</div>Voeg de eerste persoon toe met de knop hieronder.</div>';
+    } else {
+      lijst.innerHTML = '<div class="empty"><div class="big">Niks gevonden</div>Probeer een andere zoekterm of tag.</div>';
+    }
+    return;
+  }
+  let html = '';
+  gefilterd.forEach(p => {
+    const actieveOnderwerpen = (p.onderwerpen || []).filter(o => o.actief);
+    html += '<div class="card' + (actieveOnderwerpen.length ? ' open' : '') + '" onclick="openPersoon(\'' + p.id + '\')">';
+    html += '<div class="card-top"><div>';
+    html += '<p class="card-naam">' + escHtml(p.naam) + '</p>';
+    html += '<p class="card-verband">' + escHtml(p.verband || '') + '</p>';
+    html += '</div></div>';
+    if (p.tags && p.tags.length) {
+      html += '<div class="card-tags">' + p.tags.map(t => '<span>' + escHtml(t) + '</span>').join('') + '</div>';
+    }
+    html += '<div class="card-meta">' + laatstGesprokenTekst(p.laatstGesproken) + '</div>';
+    if (actieveOnderwerpen.length) {
+      html += '<div class="card-ap-list">';
+      actieveOnderwerpen.forEach(o => {
+        const updates = o.updates || [];
+        const laatste = updates.length ? updates[updates.length - 1] : null;
+        const preview = laatste ? ' - ' + kortTekst(laatste.tekst, 40) : '';
+        const bel = o.herinnering ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:3px;"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' : '';
+        html += '<div class="card-ap-item">' + bel + '<strong>' + escHtml(o.titel) + '</strong>' + escHtml(preview) + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  lijst.innerHTML = html;
+}
+
+// ==== Nieuw persoon / bewerken ====
+let npSelectedTags = [];
+let bewerkModusId = null;
+let npRelaties = [];
+let npRelSelectedType = null;
+function renderNpTagPick() {
+  const wrap = document.getElementById('npTagPick');
+  let html = '';
+  DEFAULT_TAGS.forEach(t => {
+    const selected = npSelectedTags.includes(t);
+    html += '<div class="tagpick-chip' + (selected ? ' selected' : '') + '" onclick="toggleNpTag(\'' + t + '\')">' + t + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+function toggleNpTag(tag) {
+  const i = npSelectedTags.indexOf(tag);
+  if (i === -1) npSelectedTags.push(tag);
+  else npSelectedTags.splice(i, 1);
+  renderNpTagPick();
+}
+function renderNpRelTypePick() {
+  const wrap = document.getElementById('npRelTypePick');
+  let html = '';
+  RELATIE_TYPES.forEach(t => {
+    const selected = npRelSelectedType === t;
+    html += '<div class="tagpick-chip' + (selected ? ' selected' : '') + '" onclick="npKiesRelatieType(\'' + t + '\')">' + t + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+function npKiesRelatieType(t) {
+  npRelSelectedType = t;
+  renderNpRelTypePick();
+}
+function vulNpRelPersoonSelect() {
+  const select = document.getElementById('npRelPersoon');
+  const opties = mensen.slice().sort((a, b) => a.naam.localeCompare(b.naam));
+  if (opties.length === 0) {
+    select.innerHTML = '<option value="">Nog geen andere personen aangemaakt</option>';
+  } else {
+    select.innerHTML = opties.map(m => '<option value="' + m.id + '">' + m.naam + '</option>').join('');
+  }
+}
+function npVoegRelatieToe() {
+  if (!npRelSelectedType) {
+    alert('Kies een type relatie');
+    return;
+  }
+  const select = document.getElementById('npRelPersoon');
+  const targetId = select.value;
+  const target = mensen.find(m => m.id === targetId);
+  if (!target) {
+    alert('Kies een persoon');
+    return;
+  }
+  npRelaties.push({ type: npRelSelectedType, persoonId: targetId, persoonNaam: target.naam });
+  npRelSelectedType = null;
+  renderNpRelTypePick();
+  renderNpRelatiesLijst();
+}
+function renderNpRelatiesLijst() {
+  const wrap = document.getElementById('npRelatiesLijst');
+  if (npRelaties.length === 0) {
+    wrap.innerHTML = '';
+    return;
+  }
+  let html = '';
+  npRelaties.forEach((r, i) => {
+    html += '<div class="relatie-item" style="cursor:default;">';
+    html += '<span class="relatie-tekst"><span class="relatie-type">' + r.type + '</span> ' + escHtml(r.persoonNaam) + '</span>';
+    html += '<span class="relatie-remove" onclick="npVerwijderRelatie(' + i + ')">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    html += '</span></div>';
+  });
+  wrap.innerHTML = html;
+}
+function npVerwijderRelatie(i) {
+  npRelaties.splice(i, 1);
+  renderNpRelatiesLijst();
+}
+function openNieuwPersoon() {
+  bewerkModusId = null;
+  document.getElementById('npTitel').textContent = 'Nieuw persoon';
+  document.getElementById('npOpslaanBtn').textContent = 'Opslaan';
+  npSelectedTags = [];
+  renderNpTagPick();
+  npRelaties = [];
+  npRelSelectedType = null;
+  document.getElementById('npRelatiesVeld').style.display = 'block';
+  renderNpRelTypePick();
+  renderNpRelatiesLijst();
+  vulNpRelPersoonSelect();
+  document.getElementById('overlayNieuw').classList.add('show');
+}
+function openBewerkPersoon() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  bewerkModusId = p.id;
+  document.getElementById('npTitel').textContent = 'Persoon bewerken';
+  document.getElementById('npOpslaanBtn').textContent = 'Wijzigen';
+  document.getElementById('npNaam').value = p.naam || '';
+  document.getElementById('npVerband').value = p.verband || '';
+  document.getElementById('npWerkStudie').value = p.werkStudie || '';
+  document.getElementById('npHobbies').value = p.hobbies || '';
+  document.getElementById('npGezin').value = p.gezin || '';
+  document.getElementById('npVerjaardag').value = p.verjaardag || '';
+  document.getElementById('npWoonplaats').value = p.woonplaats || '';
+  npSelectedTags = (p.tags || []).filter(t => DEFAULT_TAGS.includes(t));
+  document.getElementById('npTagsExtra').value = (p.tags || []).filter(t => !DEFAULT_TAGS.includes(t)).join(', ');
+  renderNpTagPick();
+  document.getElementById('npRelatiesVeld').style.display = 'none';
+  document.getElementById('overlayNieuw').classList.add('show');
+}
+function sluitNieuwPersoon() {
+  document.getElementById('overlayNieuw').classList.remove('show');
+  document.getElementById('npNaam').value = '';
+  document.getElementById('npVerband').value = '';
+  document.getElementById('npWerkStudie').value = '';
+  document.getElementById('npHobbies').value = '';
+  document.getElementById('npGezin').value = '';
+  document.getElementById('npVerjaardag').value = '';
+  document.getElementById('npWoonplaats').value = '';
+  document.getElementById('npTagsExtra').value = '';
+  npSelectedTags = [];
+  bewerkModusId = null;
+  npRelaties = [];
+  npRelSelectedType = null;
+}
+function opslaanNieuwPersoon() {
+  const naam = document.getElementById('npNaam').value.trim();
+  if (!naam) {
+    alert('Vul een naam in');
+    return;
+  }
+  const verband = document.getElementById('npVerband').value.trim();
+  const werkStudie = document.getElementById('npWerkStudie').value.trim();
+  const hobbies = document.getElementById('npHobbies').value.trim();
+  const gezin = document.getElementById('npGezin').value.trim();
+  const verjaardag = document.getElementById('npVerjaardag').value.trim();
+  const woonplaats = document.getElementById('npWoonplaats').value.trim();
+  const extraRaw = document.getElementById('npTagsExtra').value.trim();
+  const extraTags = extraRaw ? extraRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = npSelectedTags.concat(extraTags.filter(t => !npSelectedTags.includes(t)));
+
+  const velden = {
+    naam: naam,
+    verband: verband,
+    werkStudie: werkStudie,
+    hobbies: hobbies,
+    gezin: gezin,
+    verjaardag: verjaardag,
+    woonplaats: woonplaats,
+    tags: tags
+  };
+
+  if (bewerkModusId) {
+    db.collection('mensen').doc(bewerkModusId).update(velden)
+      .then(() => {
+        const p = mensen.find(x => x.id === bewerkModusId);
+        if (p) Object.assign(p, velden);
+        sluitNieuwPersoon();
+        renderDetail();
+        renderTags();
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Wijzigen mislukt, probeer opnieuw');
+      });
+    return;
+  }
+
+  const nieuwePersoon = Object.assign({}, velden, {
+    laatstGesproken: null,
+    onderwerpen: [],
+    relaties: npRelaties.map(r => ({ persoonId: r.persoonId, type: r.type }))
+  });
+
+  db.collection('mensen').add(nieuwePersoon)
+    .then(docRef => {
+      const nieuwId = docRef.id;
+      if (npRelaties.length === 0) return Promise.resolve();
+      const targetUpdates = npRelaties.map(r => {
+        const target = mensen.find(m => m.id === r.persoonId);
+        const relatiesB = (target ? (target.relaties || []) : []).concat([{ persoonId: nieuwId, type: RELATIE_RECIPROOK[r.type] }]);
+        return db.collection('mensen').doc(r.persoonId).update({ relaties: relatiesB });
+      });
+      return Promise.all(targetUpdates);
+    })
+    .then(() => {
+      sluitNieuwPersoon();
+      laadMensen();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan mislukt, probeer opnieuw');
+    });
+}
+
+// ==== Navigatie (History API, browser-terugknop werkt binnen de app) ====
+let huidigPersoonId = null;
+let huidigOnderwerpId = null;
+
+function toonScherm(state) {
+  const st = state || { screen: 'lijst' };
+  document.getElementById('screenLijst').style.display = st.screen === 'lijst' ? 'block' : 'none';
+  document.getElementById('screenDetail').classList.toggle('show', st.screen === 'detail');
+  document.getElementById('screenOnderwerp').classList.toggle('show', st.screen === 'onderwerp');
+  document.getElementById('screenHerinneringen').classList.toggle('show', st.screen === 'herinneringen');
+  document.getElementById('fabNieuw').style.display = st.screen === 'lijst' ? 'flex' : 'none';
+  document.getElementById('fabOnderwerp').style.display = st.screen === 'detail' ? 'flex' : 'none';
+  document.getElementById('fabUpdate').style.display = st.screen === 'onderwerp' ? 'flex' : 'none';
+
+  huidigPersoonId = st.personId || null;
+  huidigOnderwerpId = st.onderwerpId || null;
+
+  if (st.screen === 'lijst') {
+    renderLijst();
+  } else if (st.screen === 'detail') {
+    renderDetail();
+  } else if (st.screen === 'onderwerp') {
+    renderOnderwerp();
+  } else if (st.screen === 'herinneringen') {
+    renderHerinneringen();
+  }
+}
+window.addEventListener('popstate', e => {
+  toonScherm(e.state);
+});
+
+function openPersoon(id) {
+  const st = { screen: 'detail', personId: id };
+  history.pushState(st, '');
+  toonScherm(st);
+}
+function sluitDetail() {
+  history.back();
+}
+function openOnderwerp(id) {
+  const st = { screen: 'onderwerp', personId: huidigPersoonId, onderwerpId: id };
+  history.pushState(st, '');
+  toonScherm(st);
+}
+function openOnderwerpDirect(personId, onderwerpId) {
+  const st = { screen: 'onderwerp', personId: personId, onderwerpId: onderwerpId };
+  history.pushState(st, '');
+  toonScherm(st);
+}
+function openHerinneringenOverzicht() {
+  const st = { screen: 'herinneringen' };
+  history.pushState(st, '');
+  toonScherm(st);
+}
+function naarPersoonVanuitOnderwerp() {
+  if (huidigPersoonId) openPersoon(huidigPersoonId);
+}
+function renderHerinneringen() {
+  const wrap = document.getElementById('herinneringenLijst');
+  const items = [];
+  mensen.forEach(p => {
+    (p.onderwerpen || []).forEach(o => {
+      if (o.herinnering) {
+        items.push({
+          persoonId: p.id,
+          persoonNaam: p.naam,
+          onderwerpId: o.id,
+          titel: o.titel,
+          actief: o.actief,
+          herinneringDatum: o.herinneringDatum || '',
+          updates: o.updates || []
+        });
+      }
+    });
+  });
+  const vandaag = vandaagStr();
+  items.sort((a, b) => {
+    if (a.actief !== b.actief) return a.actief ? -1 : 1;
+    const la = a.updates.length ? a.updates[a.updates.length - 1].datum : '';
+    const lb = b.updates.length ? b.updates[b.updates.length - 1].datum : '';
+    return (lb || '').localeCompare(la || '');
+  });
+  if (items.length === 0) {
+    wrap.innerHTML = '<div class="leeg-sectie">Nog geen onderwerpen met een herinnering gemarkeerd</div>';
+    return;
+  }
+  let html = '';
+  items.forEach(it => {
+    const laatste = it.updates.length ? it.updates[it.updates.length - 1] : null;
+    const preview = laatste ? kortTekst(laatste.tekst, 50) + ' - ' + formatDatumKort(laatste.datum) : 'nog geen updates';
+    html += '<div class="ap-item' + (it.actief ? '' : ' inactief') + '" onclick="openOnderwerpDirect(\'' + it.persoonId + '\',\'' + it.onderwerpId + '\')">';
+    html += '<div style="flex:1;">';
+    html += '<p class="ap-tekst"><strong>' + escHtml(it.persoonNaam) + '</strong> - ' + escHtml(it.titel) + '</p>';
+    html += '<p class="ap-datum">' + (it.actief ? 'actief' : 'inactief') + ' - ' + escHtml(preview);
+    if (it.herinneringDatum) {
+      const nogTeKomen = it.herinneringDatum > vandaag;
+      html += ' - ' + (nogTeKomen ? 'herinnering vanaf ' : 'herinnering sinds ') + formatDatumKort(it.herinneringDatum);
+    }
+    html += '</p>';
+    html += '</div></div>';
+  });
+  wrap.innerHTML = html;
+}
+function huidigePersoonData() {
+  return mensen.find(p => p.id === huidigPersoonId);
+}
+function huidigOnderwerpData() {
+  const p = huidigePersoonData();
+  if (!p) return null;
+  return (p.onderwerpen || []).find(o => o.id === huidigOnderwerpId);
+}
+function renderDetail() {
+  const p = huidigePersoonData();
+  if (!p) { history.back(); return; }
+
+  document.getElementById('detailAvatar').textContent = initialen(p.naam);
+  document.getElementById('detailNaam').textContent = p.naam;
+  document.getElementById('detailVerband').textContent = (p.verband || '') + (p.tags && p.tags.length ? ' - ' + p.tags.join(', ') : '');
+
+  const infoVelden = [
+    { label: 'Werk / studie', waarde: p.werkStudie },
+    { label: 'Hobby\'s / sport', waarde: p.hobbies },
+    { label: 'Gezin / kinderen', waarde: p.gezin },
+    { label: 'Verjaardag', waarde: p.verjaardag },
+    { label: 'Woonplaats', waarde: p.woonplaats }
+  ].filter(v => v.waarde);
+  const infoSection = document.getElementById('detailInfoSection');
+  if (infoVelden.length === 0) {
+    infoSection.style.display = 'none';
+  } else {
+    infoSection.style.display = 'block';
+    let infoHtml = '';
+    infoVelden.forEach(v => {
+      infoHtml += '<div class="info-row"><span class="info-label">' + v.label + '</span><span class="info-value">' + escHtml(v.waarde) + '</span></div>';
+    });
+    document.getElementById('detailInfo').innerHTML = infoHtml;
+  }
+
+  const relWrap = document.getElementById('detailRelaties');
+  const relaties = p.relaties || [];
+  if (relaties.length === 0) {
+    relWrap.innerHTML = '<div class="leeg-sectie">Nog geen relaties gekoppeld</div>';
+  } else {
+    let relHtml = '';
+    relaties.forEach((r, i) => {
+      const target = mensen.find(m => m.id === r.persoonId);
+      const naam = target ? target.naam : '(verwijderd)';
+      relHtml += '<div class="relatie-item" onclick="openPersoon(\'' + r.persoonId + '\')">';
+      relHtml += '<span class="relatie-tekst"><span class="relatie-type">' + r.type + '</span> ' + escHtml(naam) + '</span>';
+      relHtml += '<span class="relatie-remove" onclick="event.stopPropagation(); verwijderRelatie(' + i + ')">';
+      relHtml += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      relHtml += '</span></div>';
+    });
+    relWrap.innerHTML = relHtml;
+  }
+
+  const ondWrap = document.getElementById('detailOnderwerpen');
+  const onderwerpen = (p.onderwerpen || []).slice().sort((a, b) => {
+    const la = (a.updates && a.updates.length) ? a.updates[a.updates.length - 1].datum : (a.aangemaakt || '');
+    const lb = (b.updates && b.updates.length) ? b.updates[b.updates.length - 1].datum : (b.aangemaakt || '');
+    return (lb || '').localeCompare(la || '');
+  });
+  if (onderwerpen.length === 0) {
+    ondWrap.innerHTML = '<div class="leeg-sectie">Nog geen onderwerpen</div>';
+  } else {
+    let html = '';
+    onderwerpen.forEach(o => {
+      const updates = o.updates || [];
+      const laatste = updates.length ? updates[updates.length - 1] : null;
+      const bel = o.herinnering ? ' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' : '';
+      html += '<div class="ap-item' + (o.actief ? '' : ' inactief') + '">';
+      html += '<input type="checkbox" ' + (o.actief ? 'checked' : '') + ' onclick="event.stopPropagation();" onchange="toggleOnderwerpActief(\'' + o.id + '\')">';
+      html += '<div onclick="openOnderwerp(\'' + o.id + '\')" style="flex:1;">';
+      html += '<p class="ap-tekst">' + escHtml(o.titel) + bel + '</p>';
+      html += '<p class="ap-datum">' + (o.actief ? 'actief' : 'inactief') + ' - ' + updates.length + ' update' + (updates.length === 1 ? '' : 's');
+      if (laatste) html += ' - laatste ' + formatDatumKort(laatste.datum);
+      if (o.herinnering && o.herinneringDatum) html += ' - herinnering vanaf ' + formatDatumKort(o.herinneringDatum);
+      html += '</p></div>';
+      html += '</div>';
+    });
+    ondWrap.innerHTML = html;
+  }
+}
+function toggleOnderwerpActief(id) {
+  const p = huidigePersoonData();
+  if (!p) return;
+  const onderwerpen = (p.onderwerpen || []).slice();
+  const idx = onderwerpen.findIndex(o => o.id === id);
+  if (idx === -1) return;
+  onderwerpen[idx] = Object.assign({}, onderwerpen[idx], { actief: !onderwerpen[idx].actief });
+  db.collection('mensen').doc(p.id).update({ onderwerpen: onderwerpen })
+    .then(() => {
+      p.onderwerpen = onderwerpen;
+      renderDetail();
+      renderLijst();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Bijwerken mislukt, probeer opnieuw');
+    });
+}
+
+function verwijderPersoon() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  const bevestigd = confirm('Weet je zeker dat je ' + p.naam + ' wilt verwijderen? Dit kan niet ongedaan gemaakt worden.');
+  if (!bevestigd) return;
+
+  const gekoppelden = mensen.filter(m => m.id !== p.id && (m.relaties || []).some(r => r.persoonId === p.id));
+  const opschoonUpdates = gekoppelden.map(m => {
+    const nieuweRelaties = (m.relaties || []).filter(r => r.persoonId !== p.id);
+    return db.collection('mensen').doc(m.id).update({ relaties: nieuweRelaties });
+  });
+
+  Promise.all(opschoonUpdates)
+    .then(() => db.collection('mensen').doc(p.id).delete())
+    .then(() => {
+      sluitDetail();
+      laadMensen();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Verwijderen mislukt, probeer opnieuw');
+    });
+}
+// ==== Relaties ====
+let relSelectedType = null;
+function renderRelTypePick() {
+  const wrap = document.getElementById('relTypePick');
+  let html = '';
+  RELATIE_TYPES.forEach(t => {
+    const selected = relSelectedType === t;
+    html += '<div class="tagpick-chip' + (selected ? ' selected' : '') + '" onclick="kiesRelatieType(\'' + t + '\')">' + t + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+function kiesRelatieType(t) {
+  relSelectedType = t;
+  renderRelTypePick();
+}
+function openRelatieSheet() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  relSelectedType = null;
+  renderRelTypePick();
+  const select = document.getElementById('relPersoon');
+  const opties = mensen.filter(m => m.id !== p.id).slice().sort((a, b) => a.naam.localeCompare(b.naam));
+  if (opties.length === 0) {
+    select.innerHTML = '<option value="">Nog geen andere personen aangemaakt</option>';
+  } else {
+    select.innerHTML = opties.map(m => '<option value="' + m.id + '">' + m.naam + '</option>').join('');
+  }
+  document.getElementById('overlayRelatie').classList.add('show');
+}
+function sluitRelatieSheet() {
+  document.getElementById('overlayRelatie').classList.remove('show');
+  relSelectedType = null;
+}
+function opslaanRelatie() {
+  const p = huidigePersoonData();
+  if (!p) return;
+  if (!relSelectedType) {
+    alert('Kies een type relatie');
+    return;
+  }
+  const targetId = document.getElementById('relPersoon').value;
+  const target = mensen.find(m => m.id === targetId);
+  if (!target) {
+    alert('Kies een persoon');
+    return;
+  }
+
+  const relatiesA = (p.relaties || []).concat([{ persoonId: targetId, type: relSelectedType }]);
+  const relatiesB = (target.relaties || []).concat([{ persoonId: p.id, type: RELATIE_RECIPROOK[relSelectedType] }]);
+
+  Promise.all([
+    db.collection('mensen').doc(p.id).update({ relaties: relatiesA }),
+    db.collection('mensen').doc(targetId).update({ relaties: relatiesB })
+  ])
+    .then(() => {
+      p.relaties = relatiesA;
+      target.relaties = relatiesB;
+      sluitRelatieSheet();
+      renderDetail();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan relatie mislukt, probeer opnieuw');
+    });
+}
+function verwijderRelatie(index) {
+  const p = huidigePersoonData();
+  if (!p || !p.relaties || !p.relaties[index]) return;
+  const rel = p.relaties[index];
+  const target = mensen.find(m => m.id === rel.persoonId);
+  const relatiesA = p.relaties.filter((_, i) => i !== index);
+  const updates = [db.collection('mensen').doc(p.id).update({ relaties: relatiesA })];
+  let relatiesB = null;
+  if (target) {
+    relatiesB = (target.relaties || []).filter(r => !(r.persoonId === p.id && r.type === RELATIE_RECIPROOK[rel.type]));
+    updates.push(db.collection('mensen').doc(target.id).update({ relaties: relatiesB }));
+  }
+  Promise.all(updates)
+    .then(() => {
+      p.relaties = relatiesA;
+      if (target) target.relaties = relatiesB;
+      renderDetail();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Verwijderen relatie mislukt, probeer opnieuw');
+    });
+}
+
+// ==== Onderwerpen ====
+let ondBewerkId = null;
+let atStatusActief = true;
+function renderAtStatusPick() {
+  const wrap = document.getElementById('atStatusPick');
+  const opties = [{ val: true, label: 'Actief' }, { val: false, label: 'Inactief' }];
+  let html = '';
+  opties.forEach(o => {
+    const selected = atStatusActief === o.val;
+    html += '<div class="tagpick-chip' + (selected ? ' selected' : '') + '" onclick="kiesAtStatus(' + o.val + ')">' + o.label + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+function kiesAtStatus(actief) {
+  atStatusActief = actief;
+  renderAtStatusPick();
+}
+function toggleHerinneringDatumVeld() {
+  const aan = document.getElementById('atHerinnering').checked;
+  document.getElementById('atHerinneringDatumVeld').style.display = aan ? 'block' : 'none';
+}
+function openNieuwOnderwerp() {
+  ondBewerkId = null;
+  document.getElementById('ondSheetTitel').textContent = 'Nieuw onderwerp';
+  document.getElementById('ondOpslaanBtn').textContent = 'Opslaan';
+  document.getElementById('ondNaam').value = '';
+  document.getElementById('ondEersteUpdate').value = '';
+  document.getElementById('ondEersteUpdateVeld').style.display = 'block';
+  document.getElementById('atHerinnering').checked = false;
+  document.getElementById('atHerinneringDatum').value = '';
+  document.getElementById('atHerinneringDatumVeld').style.display = 'none';
+  atStatusActief = true;
+  renderAtStatusPick();
+  document.getElementById('overlayOnderwerp').classList.add('show');
+}
+function openBewerkOnderwerp() {
+  const o = huidigOnderwerpData();
+  if (!o) return;
+  ondBewerkId = o.id;
+  document.getElementById('ondSheetTitel').textContent = 'Onderwerp bewerken';
+  document.getElementById('ondOpslaanBtn').textContent = 'Wijzigen';
+  document.getElementById('ondNaam').value = o.titel;
+  document.getElementById('ondEersteUpdateVeld').style.display = 'none';
+  document.getElementById('atHerinnering').checked = !!o.herinnering;
+  document.getElementById('atHerinneringDatum').value = o.herinneringDatum || '';
+  document.getElementById('atHerinneringDatumVeld').style.display = o.herinnering ? 'block' : 'none';
+  atStatusActief = !!o.actief;
+  renderAtStatusPick();
+  document.getElementById('overlayOnderwerp').classList.add('show');
+}
+function sluitOnderwerpSheet() {
+  document.getElementById('overlayOnderwerp').classList.remove('show');
+  ondBewerkId = null;
+}
+function opslaanOnderwerp() {
+  const titel = document.getElementById('ondNaam').value.trim();
+  if (!titel) {
+    alert('Vul een titel in');
+    return;
+  }
+  const herinnering = document.getElementById('atHerinnering').checked;
+  const herinneringDatum = herinnering ? document.getElementById('atHerinneringDatum').value : '';
+  const p = huidigePersoonData();
+  if (!p) return;
+  const vandaag = vandaagStr();
+  const onderwerpen = (p.onderwerpen || []).slice();
+
+  if (ondBewerkId) {
+    const idx = onderwerpen.findIndex(o => o.id === ondBewerkId);
+    if (idx === -1) return;
+    onderwerpen[idx] = Object.assign({}, onderwerpen[idx], {
+      titel: titel,
+      actief: atStatusActief,
+      herinnering: herinnering,
+      herinneringDatum: herinneringDatum
+    });
+  } else {
+    const eersteTekst = document.getElementById('ondEersteUpdate').value.trim();
+    const updates = eersteTekst ? [{ id: genereerId(), datum: vandaag, tekst: eersteTekst }] : [];
+    onderwerpen.push({
+      id: genereerId(),
+      titel: titel,
+      actief: atStatusActief,
+      herinnering: herinnering,
+      herinneringDatum: herinneringDatum,
+      aangemaakt: vandaag,
+      updates: updates
+    });
+  }
+
+  const velden = { onderwerpen: onderwerpen };
+  if (!ondBewerkId) velden.laatstGesproken = vandaag;
+
+  db.collection('mensen').doc(p.id).update(velden)
+    .then(() => {
+      p.onderwerpen = onderwerpen;
+      if (velden.laatstGesproken) p.laatstGesproken = velden.laatstGesproken;
+      sluitOnderwerpSheet();
+      renderDetail();
+      renderLijst();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan mislukt, probeer opnieuw');
+    });
+}
+function verwijderOnderwerp() {
+  const p = huidigePersoonData();
+  const o = huidigOnderwerpData();
+  if (!p || !o) return;
+  const bevestigd = confirm('Weet je zeker dat je "' + o.titel + '" wilt verwijderen? Dit kan niet ongedaan gemaakt worden.');
+  if (!bevestigd) return;
+  const onderwerpen = (p.onderwerpen || []).filter(x => x.id !== o.id);
+  db.collection('mensen').doc(p.id).update({ onderwerpen: onderwerpen })
+    .then(() => {
+      p.onderwerpen = onderwerpen;
+      history.back();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Verwijderen mislukt, probeer opnieuw');
+    });
+}
+function renderOnderwerp() {
+  const p = huidigePersoonData();
+  const o = huidigOnderwerpData();
+  if (!o) { history.back(); return; }
+  document.getElementById('ondPersoonNaam').textContent = p ? p.naam : '';
+  document.getElementById('ondTitel').textContent = o.titel;
+  let meta = o.actief ? 'Actief' : 'Inactief';
+  if (o.herinnering) meta += ' - herinnering aan';
+  document.getElementById('ondMeta').textContent = meta;
+
+  const wrap = document.getElementById('ondUpdates');
+  const updates = (o.updates || []).slice().reverse();
+  if (updates.length === 0) {
+    wrap.innerHTML = '<div class="leeg-sectie">Nog geen updates, voeg de eerste toe.</div>';
+  } else {
+    let html = '';
+    updates.forEach(u => {
+      html += '<div class="update-item">';
+      html += '<p class="update-datum">' + formatDatumKort(u.datum) + '</p>';
+      html += '<p class="update-tekst">' + escHtml(u.tekst) + '</p>';
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  }
+}
+function openNieuweUpdate() {
+  document.getElementById('updTekst').value = '';
+  document.getElementById('overlayUpdate').classList.add('show');
+}
+function sluitUpdateSheet() {
+  document.getElementById('overlayUpdate').classList.remove('show');
+}
+function opslaanUpdate() {
+  const tekst = document.getElementById('updTekst').value.trim();
+  if (!tekst) {
+    alert('Vul een tekst in');
+    return;
+  }
+  const p = huidigePersoonData();
+  const o = huidigOnderwerpData();
+  if (!p || !o) return;
+
+  const vandaag = vandaagStr();
+  const onderwerpen = (p.onderwerpen || []).slice();
+  const idx = onderwerpen.findIndex(x => x.id === o.id);
+  if (idx === -1) return;
+  const updates = (onderwerpen[idx].updates || []).concat([{ id: genereerId(), datum: vandaag, tekst: tekst }]);
+  onderwerpen[idx] = Object.assign({}, onderwerpen[idx], { updates: updates });
+
+  db.collection('mensen').doc(p.id).update({
+    onderwerpen: onderwerpen,
+    laatstGesproken: vandaag
+  })
+    .then(() => {
+      p.onderwerpen = onderwerpen;
+      p.laatstGesproken = vandaag;
+      sluitUpdateSheet();
+      renderOnderwerp();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Opslaan mislukt, probeer opnieuw');
+    });
+}
+
+// ==== Exports voor onclick ====
+window.openNieuwPersoon = openNieuwPersoon;
+window.sluitNieuwPersoon = sluitNieuwPersoon;
+window.opslaanNieuwPersoon = opslaanNieuwPersoon;
+window.openPersoon = openPersoon;
+window.openBewerkPersoon = openBewerkPersoon;
+window.verwijderPersoon = verwijderPersoon;
+window.sluitDetail = sluitDetail;
+window.openOnderwerp = openOnderwerp;
+window.openOnderwerpDirect = openOnderwerpDirect;
+window.openHerinneringenOverzicht = openHerinneringenOverzicht;
+window.naarPersoonVanuitOnderwerp = naarPersoonVanuitOnderwerp;
+window.toggleOnderwerpActief = toggleOnderwerpActief;
+window.openNieuwOnderwerp = openNieuwOnderwerp;
+window.openBewerkOnderwerp = openBewerkOnderwerp;
+window.sluitOnderwerpSheet = sluitOnderwerpSheet;
+window.kiesAtStatus = kiesAtStatus;
+window.toggleHerinneringDatumVeld = toggleHerinneringDatumVeld;
+window.opslaanOnderwerp = opslaanOnderwerp;
+window.verwijderOnderwerp = verwijderOnderwerp;
+window.openNieuweUpdate = openNieuweUpdate;
+window.sluitUpdateSheet = sluitUpdateSheet;
+window.opslaanUpdate = opslaanUpdate;
+window.openRelatieSheet = openRelatieSheet;
+window.sluitRelatieSheet = sluitRelatieSheet;
+window.kiesRelatieType = kiesRelatieType;
+window.opslaanRelatie = opslaanRelatie;
+window.verwijderRelatie = verwijderRelatie;
+window.toggleNpTag = toggleNpTag;
+window.npKiesRelatieType = npKiesRelatieType;
+window.npVoegRelatieToe = npVoegRelatieToe;
+window.npVerwijderRelatie = npVerwijderRelatie;
+window.filterTag = filterTag;
+window.renderLijst = renderLijst;
+
+// ==== Start ====
+history.replaceState({ screen: 'lijst' }, '');
+laadMensen();
+setInterval(laadMensen, 30000);
+</script>
+</body>
+</html>
